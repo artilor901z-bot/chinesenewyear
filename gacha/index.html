@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>福袋 - Fortune Bag</title>
+
+  <!-- Google Fonts - Chinese Calligraphy -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+
+  <!-- Chinese Fonts from CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/LongCang/result.css">
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/ZCOOLXiaoWei/result.css">
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/ZCOOLQingKeHuangYou/result.css">
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/ZCOOLKuaiLe/result.css">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #CC0000;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      font-family: monospace;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      touch-action: none;
+    }
+
+    /* Card overlay */
+    #card-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      pointer-events: none;
+    }
+    #card-overlay.visible {
+      display: flex;
+      pointer-events: auto;
+    }
+
+    .card-container {
+      width: min(380px, 82vw);
+      padding: 36px 28px 28px;
+      background: rgba(15, 5, 5, 0.92);
+      border: 2px solid var(--card-color, #FFD700);
+      border-radius: 16px;
+      box-shadow:
+        0 0 40px var(--card-glow, rgba(255,215,0,0.3)),
+        0 0 80px var(--card-glow, rgba(255,215,0,0.15)),
+        inset 0 0 30px rgba(0,0,0,0.4);
+      backdrop-filter: blur(12px);
+      text-align: center;
+      animation: cardAppear 0.6s ease-out;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes cardAppear {
+      0% { transform: scale(0.3) rotateY(90deg); opacity: 0; }
+      50% { transform: scale(1.05) rotateY(0deg); opacity: 1; }
+      100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+    }
+
+    .card-stars {
+      font-size: 1.4rem;
+      letter-spacing: 4px;
+      margin-bottom: 8px;
+      color: var(--card-color, #FFD700);
+      text-shadow: 0 0 10px var(--card-glow, rgba(255,215,0,0.5));
+    }
+
+    .card-category {
+      font-size: 0.85rem;
+      color: var(--card-color, #FFD700);
+      opacity: 0.8;
+      margin-bottom: 16px;
+      letter-spacing: 6px;
+    }
+
+    .card-character {
+      font-size: 7rem;
+      line-height: 1.1;
+      color: #FFF;
+      text-shadow:
+        0 0 30px var(--card-glow, rgba(255,215,0,0.6)),
+        0 0 60px var(--card-glow, rgba(255,215,0,0.3));
+      margin: 12px 0 20px;
+      font-family: var(--card-font, serif);
+    }
+
+    .card-divider {
+      width: 60%;
+      height: 1px;
+      margin: 0 auto 16px;
+      background: linear-gradient(90deg, transparent, var(--card-color, #FFD700), transparent);
+      opacity: 0.5;
+    }
+
+    .card-phrase {
+      font-size: 1.4rem;
+      color: var(--card-color, #FFD700);
+      letter-spacing: 8px;
+      margin-bottom: 8px;
+      text-shadow: 0 0 12px var(--card-glow, rgba(255,215,0,0.4));
+    }
+
+    .card-english {
+      font-size: 0.8rem;
+      color: rgba(255, 215, 0, 0.55);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .card-info {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.35);
+      margin-top: 8px;
+    }
+
+    /* Corner decorations */
+    .card-container::before,
+    .card-container::after {
+      content: '';
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-color: var(--card-color, #FFD700);
+      border-style: solid;
+      opacity: 0.5;
+    }
+    .card-container::before {
+      top: 8px; left: 8px;
+      border-width: 2px 0 0 2px;
+    }
+    .card-container::after {
+      bottom: 8px; right: 8px;
+      border-width: 0 2px 2px 0;
+    }
+
+    /* Buttons */
+    .btn-draw-again {
+      display: none;
+      margin: 20px auto 0;
+      padding: 12px 32px;
+      background: rgba(255, 215, 0, 0.15);
+      color: #FFD700;
+      border: 1.5px solid rgba(255, 215, 0, 0.5);
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: all 0.3s ease;
+      letter-spacing: 2px;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+    }
+    .btn-draw-again:hover {
+      background: rgba(255, 215, 0, 0.3);
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .back-link {
+      display: none;
+      margin: 12px auto 0;
+      color: rgba(255, 215, 0, 0.4);
+      font-size: 0.8rem;
+      text-decoration: none;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      text-align: center;
+      transition: color 0.3s;
+    }
+    .back-link:hover {
+      color: rgba(255, 215, 0, 0.7);
+    }
+  </style>
+  <script type="module" crossorigin src="/chinesenewyear/assets/gacha-BNknd-av.js"></script>
+  <link rel="modulepreload" crossorigin href="/chinesenewyear/assets/modulepreload-polyfill-B5Qt9EMX.js">
+</head>
+<body>
+  <canvas id="c"></canvas>
+
+  <div id="card-overlay">
+    <div style="display:flex;flex-direction:column;align-items:center;">
+      <div class="card-container">
+        <div class="card-stars" id="card-stars"></div>
+        <div class="card-category" id="card-category"></div>
+        <div class="card-character" id="card-character"></div>
+        <div class="card-divider"></div>
+        <div class="card-phrase" id="card-phrase"></div>
+        <div class="card-english" id="card-english"></div>
+        <div class="card-info" id="card-info"></div>
+      </div>
+      <button class="btn-draw-again" id="btn-draw-again">再抽一次 · Draw Again</button>
+      <a class="back-link" id="back-link" href="../collection/">收集册 Collection</a>
+      <a class="back-link" id="home-link" href="../" style="display:none;">返回 Back</a>
+    </div>
+  </div>
+
+</body>
+</html>
