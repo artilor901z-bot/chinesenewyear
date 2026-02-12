@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>收集册 - Collection</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Liu+Jian+Mao+Cao&family=Ma+Shan+Zheng&family=Zhi+Mang+Xing&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/LongCang/result.css">
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/ZCOOLXiaoWei/result.css">
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/ZCOOLQingKeHuangYou/result.css">
+  <link rel="stylesheet" href="https://unpkg.com/chinese-fonts/dist/ZCOOLKuaiLe/result.css">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #1a0505;
+      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #FFD700;
+      overflow-x: hidden;
+    }
+
+    /* === Header === */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: rgba(15, 3, 3, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 215, 0, 0.15);
+      padding: 16px 20px;
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .header h1 {
+      font-size: 1.4rem;
+      letter-spacing: 4px;
+      text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+    }
+
+    .header-links {
+      display: flex;
+      gap: 16px;
+    }
+
+    .header-links a {
+      color: rgba(255, 215, 0, 0.5);
+      text-decoration: none;
+      font-size: 0.8rem;
+      transition: color 0.3s;
+    }
+    .header-links a:hover { color: #FFD700; }
+
+    /* === Progress bar === */
+    .progress-section {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 12px 0 0;
+    }
+
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: rgba(255, 215, 0, 0.6);
+      margin-bottom: 6px;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: rgba(255, 215, 0, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #CC0000, #FFD700);
+      border-radius: 3px;
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+    }
+
+    /* === Main content === */
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    /* === Category section === */
+    .category {
+      margin-bottom: 28px;
+    }
+
+    .category-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 215, 0, 0.08);
+    }
+
+    .category-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .category-name {
+      font-size: 1rem;
+      letter-spacing: 3px;
+    }
+
+    .category-name-en {
+      font-size: 0.7rem;
+      color: rgba(255, 215, 0, 0.35);
+      margin-left: 4px;
+    }
+
+    .category-count {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: rgba(255, 215, 0, 0.4);
+    }
+
+    /* === Card grid === */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+      gap: 10px;
+    }
+
+    .card-cell {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+      position: relative;
+      transition: transform 0.2s, box-shadow 0.3s;
+      border: 1.5px solid rgba(255, 215, 0, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Uncollected */
+    .card-cell.locked {
+      opacity: 0.3;
+    }
+    .card-cell.locked .card-char {
+      color: rgba(255, 255, 255, 0.15);
+      text-shadow: none;
+    }
+
+    /* Collected */
+    .card-cell.collected {
+      border-color: var(--cat-color);
+      background: rgba(var(--cat-r), var(--cat-g), var(--cat-b), 0.08);
+      cursor: pointer;
+      box-shadow: 0 0 12px rgba(var(--cat-r), var(--cat-g), var(--cat-b), 0.15);
+    }
+    .card-cell.collected:hover {
+      transform: translateY(-3px);
+      box-shadow:
+        0 0 20px rgba(var(--cat-r), var(--cat-g), var(--cat-b), 0.3),
+        0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .card-cell.collected .card-char {
+      color: var(--cat-color);
+      text-shadow: 0 0 12px rgba(var(--cat-r), var(--cat-g), var(--cat-b), 0.5);
+    }
+
+    .card-char {
+      font-size: 2rem;
+      line-height: 1;
+    }
+
+    .card-count {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-size: 0.6rem;
+      color: rgba(255, 215, 0, 0.5);
+    }
+
+    /* New badge */
+    .card-new {
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      width: 16px;
+      height: 16px;
+      background: #FF2D2D;
+      border-radius: 50%;
+      border: 2px solid #1a0505;
+    }
+
+    /* === Detail modal === */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.visible {
+      display: flex;
+    }
+
+    .modal-card {
+      width: min(340px, 85vw);
+      background: rgba(15, 5, 5, 0.95);
+      border: 2px solid var(--modal-color, #FFD700);
+      border-radius: 16px;
+      padding: 32px 24px 24px;
+      text-align: center;
+      box-shadow:
+        0 0 40px var(--modal-glow, rgba(255,215,0,0.25)),
+        0 0 80px var(--modal-glow, rgba(255,215,0,0.1));
+      animation: modalIn 0.35s ease-out;
+      position: relative;
+    }
+
+    @keyframes modalIn {
+      0% { transform: scale(0.85); opacity: 0; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-card::before,
+    .modal-card::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: var(--modal-color, #FFD700);
+      border-style: solid;
+      opacity: 0.4;
+    }
+    .modal-card::before {
+      top: 8px; left: 8px;
+      border-width: 2px 0 0 2px;
+    }
+    .modal-card::after {
+      bottom: 8px; right: 8px;
+      border-width: 0 2px 2px 0;
+    }
+
+    .modal-stars {
+      font-size: 1.2rem;
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+      color: var(--modal-color, #FFD700);
+    }
+
+    .modal-category {
+      font-size: 0.75rem;
+      color: var(--modal-color, #FFD700);
+      opacity: 0.7;
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+    }
+
+    .modal-char {
+      font-size: 5.5rem;
+      line-height: 1.1;
+      color: #FFF;
+      text-shadow:
+        0 0 25px var(--modal-glow, rgba(255,215,0,0.5)),
+        0 0 50px var(--modal-glow, rgba(255,215,0,0.2));
+      margin-bottom: 16px;
+    }
+
+    .modal-divider {
+      width: 50%;
+      height: 1px;
+      margin: 0 auto 14px;
+      background: linear-gradient(90deg, transparent, var(--modal-color, #FFD700), transparent);
+      opacity: 0.4;
+    }
+
+    .modal-phrase {
+      font-size: 1.2rem;
+      color: var(--modal-color, #FFD700);
+      letter-spacing: 6px;
+      margin-bottom: 6px;
+    }
+
+    .modal-english {
+      font-size: 0.75rem;
+      color: rgba(255, 215, 0, 0.45);
+      margin-bottom: 16px;
+    }
+
+    .modal-meta {
+      font-size: 0.65rem;
+      color: rgba(255, 255, 255, 0.25);
+      line-height: 1.6;
+    }
+
+    .modal-close {
+      margin-top: 16px;
+      padding: 8px 24px;
+      background: rgba(255, 215, 0, 0.1);
+      color: rgba(255, 215, 0, 0.6);
+      border: 1px solid rgba(255, 215, 0, 0.2);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    .modal-close:hover {
+      background: rgba(255, 215, 0, 0.2);
+      color: #FFD700;
+    }
+
+    /* === Empty state === */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255, 215, 0, 0.3);
+    }
+    .empty-state .big-char {
+      font-size: 4rem;
+      opacity: 0.2;
+      margin-bottom: 16px;
+    }
+    .empty-state a {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 10px 28px;
+      background: rgba(255, 215, 0, 0.15);
+      color: #FFD700;
+      text-decoration: none;
+      border: 1.5px solid rgba(255, 215, 0, 0.4);
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.3s;
+    }
+    .empty-state a:hover {
+      background: rgba(255, 215, 0, 0.3);
+    }
+
+    /* Scanlines effect */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      z-index: 999;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,0.03) 3px,
+        rgba(0,0,0,0.03) 4px
+      );
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-top">
+      <h1>收 集 册</h1>
+      <div class="header-links">
+        <a href="../gacha/">抽卡</a>
+        <a href="../">首页</a>
+      </div>
+    </div>
+    <div class="progress-section">
+      <div class="progress-stats">
+        <span id="progress-text">0 / 0</span>
+        <span id="draw-count">共抽卡 0 次</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content" id="content"></div>
+
+  <div class="modal-overlay" id="modal">
+    <div class="modal-card" id="modal-card">
+      <div class="modal-stars" id="modal-stars"></div>
+      <div class="modal-category" id="modal-category"></div>
+      <div class="modal-char" id="modal-char"></div>
+      <div class="modal-divider"></div>
+      <div class="modal-phrase" id="modal-phrase"></div>
+      <div class="modal-english" id="modal-english"></div>
+      <div class="modal-meta" id="modal-meta"></div>
+      <button class="modal-close" id="modal-close">关闭</button>
+    </div>
+  </div>
+
+  <script type="module" src="./collection.js"></script>
+</body>
+</html>
