@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install)",
+      "Bash(curl:*)",
+      "Bash(npm run dev:*)",
+      "Bash(tree:*)",
+      "Bash(npx vite --open)",
+      "Bash(npx vite:*)",
+      "Bash(start:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

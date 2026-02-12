@@ -1,0 +1,24 @@
+{
+  "name": "fu-project",
+  "version": "1.0.0",
+  "description": "福 - Chinese Fortune Character Interactive Experience",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "gasp": "^0.0.2",
+    "gsap": "^3.12.5",
+    "lil-gui": "^0.19.2",
+    "lottie-web": "^5.12.2",
+    "stats-js": "^1.0.1",
+    "three": "^0.164.1"
+  },
+  "devDependencies": {
+    "sass": "^1.77.2",
+    "vite": "^5.4.11",
+    "vite-plugin-string": "^1.2.3"
+  }
+}
