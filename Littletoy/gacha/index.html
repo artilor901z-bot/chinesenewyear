@@ -184,11 +184,164 @@
     .back-link:hover {
       color: rgba(255, 215, 0, 0.7);
     }
+
+    /* 十连抽按钮 - 右下角 */
+    .btn-multi-pull {
+      position: fixed;
+      bottom: 10vh;
+      right: 5vw;
+      z-index: 5;
+      padding: 14px 28px;
+      background: linear-gradient(135deg, rgba(255,215,0,0.2), rgba(255,165,0,0.15));
+      color: #FFD700;
+      border: 1.5px solid rgba(255,215,0,0.6);
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: 3px;
+      text-shadow: 0 0 10px rgba(255,215,0,0.4);
+      box-shadow: 0 0 24px rgba(255,215,0,0.15), inset 0 0 12px rgba(255,215,0,0.05);
+      transition: all 0.3s ease;
+      animation: multiPulse 2.5s ease-in-out infinite;
+    }
+    .btn-multi-pull:hover {
+      background: linear-gradient(135deg, rgba(255,215,0,0.35), rgba(255,165,0,0.25));
+      box-shadow: 0 0 36px rgba(255,215,0,0.3);
+      transform: translateY(-2px) scale(1.03);
+    }
+    .btn-multi-pull.hidden { display: none; }
+    @keyframes multiPulse {
+      0%, 100% { box-shadow: 0 0 24px rgba(255,215,0,0.15); }
+      50% { box-shadow: 0 0 36px rgba(255,215,0,0.3); }
+    }
+
+    /* Multi-card overlay */
+    #multi-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 20;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: rgba(10, 2, 2, 0.95);
+      overflow-y: auto;
+      padding: 20px 10px;
+    }
+    #multi-overlay.visible { display: flex; }
+
+    .multi-title {
+      font-size: 1.4rem;
+      color: #FFD700;
+      letter-spacing: 8px;
+      margin-bottom: 20px;
+      text-shadow: 0 0 12px rgba(255,215,0,0.4);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .multi-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      max-width: 600px;
+      width: 92vw;
+      margin: 0 auto;
+    }
+    @media (max-width: 520px) {
+      .multi-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+      }
+    }
+
+    .multi-card {
+      position: relative;
+      aspect-ratio: 3/4;
+      background: rgba(20, 8, 8, 0.9);
+      border: 1.5px solid var(--mc-color, #FFD700);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 16px var(--mc-glow, rgba(255,215,0,0.2));
+      transition: transform 0.2s, box-shadow 0.2s;
+      animation: mcAppear 0.5s ease-out both;
+      overflow: hidden;
+    }
+    .multi-card:hover {
+      transform: scale(1.06);
+      box-shadow: 0 0 28px var(--mc-glow, rgba(255,215,0,0.4));
+    }
+    .multi-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at center, var(--mc-glow, rgba(255,215,0,0.1)), transparent 70%);
+      pointer-events: none;
+    }
+    @keyframes mcAppear {
+      0% { transform: scale(0) rotateY(90deg); opacity: 0; }
+      100% { transform: scale(1) rotateY(0deg); opacity: 1; }
+    }
+
+    .mc-stars {
+      font-size: 0.5rem;
+      color: var(--mc-color, #FFD700);
+      letter-spacing: 1px;
+      margin-bottom: 2px;
+      text-shadow: 0 0 6px var(--mc-glow, rgba(255,215,0,0.4));
+    }
+    .mc-char {
+      font-size: 2.2rem;
+      color: #FFF;
+      text-shadow: 0 0 16px var(--mc-glow, rgba(255,215,0,0.5));
+      line-height: 1.2;
+    }
+    .mc-phrase {
+      font-size: 0.45rem;
+      color: var(--mc-color, #FFD700);
+      opacity: 0.7;
+      margin-top: 2px;
+      letter-spacing: 1px;
+    }
+    @media (max-width: 520px) {
+      .mc-char { font-size: 1.6rem; }
+      .mc-stars { font-size: 0.4rem; }
+      .mc-phrase { font-size: 0.35rem; }
+    }
+
+    .multi-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 16px;
+    }
+
+    /* Detail popup */
+    #multi-detail {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 25;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      cursor: pointer;
+    }
+    #multi-detail.visible { display: flex; }
   </style>
 </head>
 <body>
   <canvas id="c"></canvas>
 
+  <!-- 十连抽按钮 -->
+  <button id="btn-multi-pull" class="btn-multi-pull">十连抽 ×10</button>
+
+  <!-- Single card overlay -->
   <div id="card-overlay">
     <div style="display:flex;flex-direction:column;align-items:center;">
       <div class="card-container">
@@ -203,6 +356,31 @@
       <button class="btn-draw-again" id="btn-draw-again">再抽一次 · Draw Again</button>
       <a class="back-link" id="back-link" href="../collection/">收集册 Collection</a>
       <a class="back-link" id="home-link" href="../" style="display:none;">返回 Back</a>
+    </div>
+  </div>
+
+  <!-- Multi-card (10-pull) overlay -->
+  <div id="multi-overlay">
+    <div class="multi-title">十连结果</div>
+    <div class="multi-grid" id="multi-grid"></div>
+    <div class="multi-actions">
+      <button class="btn-draw-again" id="btn-multi-again" style="display:block;">再来十连 ×10</button>
+      <button class="btn-draw-again" id="btn-multi-single" style="display:block;">单抽一次</button>
+      <a class="back-link" id="multi-back" href="../collection/" style="display:block;">收集册 Collection</a>
+      <a class="back-link" id="multi-home" href="../" style="display:block;">返回 Back</a>
+    </div>
+  </div>
+
+  <!-- Detail popup inside multi overlay -->
+  <div id="multi-detail">
+    <div class="card-container" id="detail-card">
+      <div class="card-stars" id="detail-stars"></div>
+      <div class="card-category" id="detail-category"></div>
+      <div class="card-character" id="detail-character"></div>
+      <div class="card-divider"></div>
+      <div class="card-phrase" id="detail-phrase"></div>
+      <div class="card-english" id="detail-english"></div>
+      <div class="card-info" id="detail-info"></div>
     </div>
   </div>
 

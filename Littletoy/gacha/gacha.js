@@ -798,6 +798,7 @@ let currentDraw = null;
 let snapBackCb = null;
 let quickPullCb = null;
 let preDrawnTier = null;
+let isMultiMode = false;
 
 function changeState(newState) {
     state = newState;
@@ -811,7 +812,15 @@ function changeState(newState) {
         sparkles.length = 0;
         currentDraw = null;
         preDrawnTier = null;
+        isMultiMode = false;
         hideCardOverlay();
+        // Hide multi overlay if visible
+        const mo = document.getElementById('multi-overlay');
+        const md = document.getElementById('multi-detail');
+        if (mo) mo.classList.remove('visible');
+        if (md) md.classList.remove('visible');
+        const bmp = document.getElementById('btn-multi-pull');
+        if (bmp) bmp.classList.remove('hidden');
     }
     if (newState === 'PULLING') {
         currentDraw = performDraw();
@@ -825,7 +834,7 @@ function changeState(newState) {
         spawnBurstParticles(W / 2, H / 2, currentDraw.tier);
     }
     if (newState === 'CARD_DISPLAY') {
-        showCardOverlay(currentDraw);
+        if (!isMultiMode) showCardOverlay(currentDraw);
     }
 }
 
@@ -1129,6 +1138,175 @@ btnDrawAgain.addEventListener('click', () => {
 });
 
 // ============================================================
+// MULTI-PULL (十连抽) SYSTEM
+// ============================================================
+
+const btnMultiPull = document.getElementById('btn-multi-pull');
+const multiOverlay = document.getElementById('multi-overlay');
+const multiGrid = document.getElementById('multi-grid');
+const btnMultiAgain = document.getElementById('btn-multi-again');
+const btnMultiSingle = document.getElementById('btn-multi-single');
+const multiDetail = document.getElementById('multi-detail');
+const detailCard = document.getElementById('detail-card');
+
+let multiDraws = [];
+
+function performMultiDraw() {
+    const draws = [];
+    for (let i = 0; i < 10; i++) {
+        draws.push(performDraw());
+    }
+    // Sort by rarity (best first)
+    draws.sort((a, b) => a.tierIndex - b.tierIndex);
+    return draws;
+}
+
+function saveMultiDrawsToCollection(draws) {
+    let collection = {};
+    try { collection = JSON.parse(localStorage.getItem('gacha_collection') || '{}'); } catch(e) {}
+    const stats = { totalDraws: 0 };
+    try { Object.assign(stats, JSON.parse(localStorage.getItem('gacha_stats') || '{}')); } catch(e) {}
+
+    for (const draw of draws) {
+        const key = draw.character;
+        if (collection[key]) {
+            collection[key].count++;
+        } else {
+            collection[key] = { count: 1, firstTime: Date.now(), tierIndex: draw.tierIndex };
+        }
+        stats.totalDraws++;
+    }
+    localStorage.setItem('gacha_collection', JSON.stringify(collection));
+    localStorage.setItem('gacha_stats', JSON.stringify(stats));
+}
+
+function showMultiResults(draws) {
+    multiDraws = draws;
+    multiGrid.innerHTML = '';
+
+    for (let i = 0; i < draws.length; i++) {
+        const d = draws[i];
+        const card = document.createElement('div');
+        card.className = 'multi-card';
+        card.style.setProperty('--mc-color', d.tier.color);
+        card.style.setProperty('--mc-glow', d.tier.glow);
+        card.style.animationDelay = `${i * 0.08}s`;
+
+        card.innerHTML = `
+            <div class="mc-stars">${'★'.repeat(d.tier.stars)}</div>
+            <div class="mc-char" style="font-family:${chosenFont},serif">${d.character}</div>
+            <div class="mc-phrase">${d.blessing.phrase}</div>
+        `;
+
+        card.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showMultiDetail(d);
+        });
+
+        multiGrid.appendChild(card);
+    }
+
+    multiOverlay.classList.add('visible');
+    btnMultiPull.classList.add('hidden');
+}
+
+function hideMultiResults() {
+    multiOverlay.classList.remove('visible');
+    multiDetail.classList.remove('visible');
+    if (state === 'IDLE' || state === 'CARD_DISPLAY') {
+        btnMultiPull.classList.remove('hidden');
+    }
+}
+
+function showMultiDetail(draw) {
+    detailCard.style.setProperty('--card-color', draw.tier.color);
+    detailCard.style.setProperty('--card-glow', draw.tier.glow);
+    detailCard.style.setProperty('--card-font', `${chosenFont}, serif`);
+
+    document.getElementById('detail-stars').textContent = '★'.repeat(draw.tier.stars) + '☆'.repeat(6 - draw.tier.stars);
+    document.getElementById('detail-category').textContent = `${draw.category.name} · ${draw.category.nameEn}`;
+    const charEl = document.getElementById('detail-character');
+    charEl.textContent = draw.character;
+    charEl.style.fontFamily = `${chosenFont}, serif`;
+    document.getElementById('detail-phrase').textContent = draw.blessing.phrase;
+    document.getElementById('detail-english').textContent = draw.blessing.english;
+    document.getElementById('detail-info').textContent = `${draw.tier.label} · ${draw.tier.labelEn}`;
+
+    detailCard.style.animation = 'none';
+    detailCard.offsetHeight;
+    detailCard.style.animation = '';
+
+    multiDetail.classList.add('visible');
+}
+
+multiDetail.addEventListener('click', () => {
+    multiDetail.classList.remove('visible');
+});
+
+function startMultiPull() {
+    if (state !== 'IDLE') return;
+    isMultiMode = true;
+    const draws = performMultiDraw();
+    saveMultiDrawsToCollection(draws);
+    btnMultiPull.classList.add('hidden');
+
+    // Quick burst animation then show results
+    currentDraw = draws[0]; // Use best draw for burst visual
+    preDrawnTier = currentDraw.tier;
+    changeState('PULLING');
+
+    const quickStart = globalTime;
+    const dur = 0.5;
+    quickPullCb = () => {
+        const t = clamp((globalTime - quickStart) / dur, 0, 1);
+        pullProgress = easeInOut(t);
+        if (t >= 1) {
+            pullProgress = 1;
+            quickPullCb = null;
+            // Burst then show multi results
+            initCircleFragments(W / 2, H / 2);
+            spawnBurstParticles(W / 2, H / 2, currentDraw.tier);
+            state = 'BURST';
+            stateStartGlobal = globalTime;
+            stateTime = 0;
+
+            // Show multi overlay after burst
+            setTimeout(() => {
+                showMultiResults(draws);
+                state = 'CARD_DISPLAY';
+                stateStartGlobal = globalTime;
+                stateTime = 0;
+            }, 800);
+        }
+    };
+}
+
+btnMultiPull.addEventListener('click', () => {
+    startMultiPull();
+});
+
+btnMultiAgain.addEventListener('click', () => {
+    hideMultiResults();
+    changeState('IDLE');
+    setTimeout(() => startMultiPull(), 100);
+});
+
+btnMultiSingle.addEventListener('click', () => {
+    hideMultiResults();
+    isMultiMode = false;
+    changeState('IDLE');
+});
+
+// Show/hide multi-pull button based on state
+function updateMultiPullButton() {
+    if (state === 'IDLE' && !isMultiMode) {
+        btnMultiPull.classList.remove('hidden');
+    } else if (state !== 'IDLE' && !multiOverlay.classList.contains('visible')) {
+        btnMultiPull.classList.add('hidden');
+    }
+}
+
+// ============================================================
 // INTERACTION HANDLERS
 // ============================================================
 
@@ -1269,6 +1447,8 @@ function frame(now) {
     renderSparkles();
 
     ctx.restore();
+
+    updateMultiPullButton();
 
     requestAnimationFrame(frame);
 }
